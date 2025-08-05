@@ -5,21 +5,26 @@ metadata:
 spec:
   # Requisitos para os nós que o Karpenter irá criar.
   requirements:
-    - key: karpenter.sh/pkg/arch
+    # CORRIGIDO: Usando a label padrão do Kubernetes para arquitetura.
+    - key: kubernetes.io/arch
       operator: In
-      values: ["amd64"] # Arquitetura do processador
+      values: ["amd64"]
     - key: karpenter.k8s.aws/instance-category
       operator: In
       values: ["c", "m", "r"] # Famílias de instâncias permitidas (C, M, R)
     - key: karpenter.k8s.aws/instance-generation
       operator: Gt
       values: ["2"] # Apenas instâncias de geração 2 ou superior
+    # Adicionando o tipo de capacidade para mais clareza (boa prática)
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["on-demand"]
 
   # Limita o total de recursos que este provisioner pode alocar no cluster.
   limits:
     resources:
-      cpu: "100" # Limite de 100 vCPUs
-      memory: 100Gi # Limite de 100 GiB de memória
+      cpu: "100"
+      memory: 100Gi
 
   # Provedor de nuvem e configurações específicas
   providerRef:
@@ -34,8 +39,7 @@ metadata:
   name: default
 spec:
   # Configurações específicas da AWS para os nós criados.
-  # Aqui você pode definir subnets, security groups, etc.
   subnetSelector:
-    karpenter.sh/discovery: fiap-eks # Usa as subnets do seu cluster EKS
+    karpenter.sh/discovery: fiap-eks
   securityGroupSelector:
-    karpenter.sh/discovery: fiap-eks # Usa os security groups do seu cluster EKS
+    karpenter.sh/discovery: fiap-eks
