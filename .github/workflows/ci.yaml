@@ -1,0 +1,64 @@
+name: CI - Build, Teste e Geração com IA
+
+on:
+  pull_request:
+
+env:
+  ECR_REPOSITORY: "ai-flask-app"
+  AWS_REGION: "us-east-1"
+  APP_NAME: "app-python"
+
+jobs:
+  build-and-test:
+    name: Build, Teste e Geração de Artefatos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: 1. Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 2. AI Code Review
+        if: github.event_name == 'pull_request'
+        uses: cider-security/pr-scanner-action@latest
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 3. Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 4. Instalar dependências do script de IA
+        run: pip install requests
+
+      - name: 5. Analisar Projeto e Gerar Dockerfile com IA
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python .github/scripts/generate_dockerfile.py
+
+      - name: 6. Commitar o Dockerfile gerado (se estiver na branch main)
+        if: github.ref == 'refs/heads/main'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: ✨ Gera e commita Dockerfile via IA"
+          file_pattern: Dockerfile
+
+      - name: 7. Build Local da Imagem Docker para Validação
+        run: |
+          echo "Iniciando build local para validar o Dockerfile..."
+          docker build -t local-validation-image:${{ github.sha }} .
+          echo "✅ Dockerfile validado com sucesso."
+
+      - name: 8. Upload dos Artefatos para o CD
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-artifacts
+          path: |
+            Dockerfile
+            k8s/
+            k8s-addons/
+            app.py
+            requirements.txt
