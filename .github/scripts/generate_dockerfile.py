@@ -5,7 +5,6 @@ import requests
 import time
 
 # --- Configuração ---
-# ATUALIZADO: Usando a tag 'latest' para garantir que sempre usamos a versão mais recente do modelo Flash.
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
@@ -42,19 +41,22 @@ def generate_dockerfile_with_ai(context):
     Envia o contexto do projeto para a API do Gemini e pede para gerar um Dockerfile otimizado.
     """
     prompt = f"""
-    Com base no seguinte projeto Python/Flask, gere um Dockerfile de produção otimizado.
+    Com base no seguinte projeto Python/Flask, gere um Dockerfile de produção otimizado e simples, sem usar um ambiente virtual (venv).
 
     Contexto do Projeto:
     {context}
 
     Requisitos para o Dockerfile:
-    1.  **Multi-stage build:** Use um estágio de 'builder' para instalar dependências e um estágio final leve.
-    2.  **Imagem base leve:** Use uma imagem base slim para Python (ex: python:3.10-slim).
-    3.  **Usuário não-root:** Crie e utilize um usuário não-root por segurança.
-    4.  **Porta:** Exponha a porta 8080, que é a porta que a aplicação Flask está usando.
-    5.  **Otimização de cache:** Copie 'requirements.txt' e instale as dependências antes de copiar o resto do código.
-    6.  **Comentários:** Adicione comentários explicando cada passo importante.
-    7.  **Comando de Execução:** Use `CMD ["python", "app.py"]` para iniciar a aplicação. Não use `RUN` para este passo.
+    1.  **Imagem Base:** Use uma imagem base leve como `python:3.10-slim`.
+    2.  **Sem Venv:** Não crie ou use um ambiente virtual. O contêiner é o isolamento.
+    3.  **Instalação de Dependências:**
+        a. Copie `requirements.txt` primeiro para otimizar o cache de layers.
+        b. Instale as dependências globalmente usando `pip install --no-cache-dir -r requirements.txt`.
+    4.  **Código da Aplicação:** Depois de instalar as dependências, copie o resto do código da aplicação (ex: `app.py`).
+    5.  **Segurança:** Crie e mude para um usuário não-root ('appuser').
+    6.  **Comando de Execução:** Use `CMD ["python", "app.py"]` para iniciar a aplicação.
+    7.  **Porta:** Exponha a porta 8080.
+    8.  **Comentários:** Adicione comentários explicando os passos importantes.
 
     Responda APENAS com o código do Dockerfile, sem nenhuma explicação extra ou formatação de markdown como ```dockerfile.
     """
