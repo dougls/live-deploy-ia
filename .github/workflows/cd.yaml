@@ -2,7 +2,10 @@ name: CD - Deploy no Kubernetes
 
 on:
   workflow_run:
-    workflows: ["CD - Terraform"]
+    workflows: [
+      "CI - Build, Teste e Geração com IA",
+      "CD - Terraform"
+      ]
     types:
       - completed
     branches:

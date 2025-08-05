@@ -37,13 +37,13 @@ jobs:
           --parameter-overrides "ClusterName=${{ env.CLUSTER_NAME }}"
 
       - name: 4. Install Helm
-        uses: azure/setup-helm@v1
+        uses: azure/setup-helm@v4
 
-      - name: 5. Adding Karpenter
+      - name: 5. Add Helm Repositories
         run: |
-          helm init
           helm repo add karpenter https://charts.karpenter.sh/
-          helm repo update
+          helm repo add kedacore https://kedacore.github.io/charts
+          helm update
 
       - name: 6. Install Karpenter
         run: |
@@ -53,12 +53,8 @@ jobs:
           --set settings.aws.clusterName=${{ env.CLUSTER_NAME }} \
           --set settings.aws.defaultInstanceProfile=KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }} \
           --wait
-      
-      - name: 7. Adding KEDA
-        run: |
-          helm repo add kedacore https://kedacore.github.io/charts
-          helm repo update
 
       - name: 8. Install KEDA
         run: |
-          helm install keda kedacore/keda --namespace keda --create-namespace
+          helm upgrade --install keda kedacore/keda \
+          --namespace keda --create-namespace
