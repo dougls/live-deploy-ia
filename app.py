@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "<h1>Olá! Esta aplicação foi implantada com um pipeline de CI/CD com IA na FIAP!</h1>"
+    return "<h1>Olá! Esta aplicação foi implantada com um pipeline de CI/CD com IA!</h1>"
 
 @app.route('/health')
 def health_check():
