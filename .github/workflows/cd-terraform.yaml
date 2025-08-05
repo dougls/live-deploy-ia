@@ -10,7 +10,7 @@ env:
   AWS_REGION: us-east-1
 
 jobs:
-  create_infra:
+  create_infra_aws:
     name: terraform
     runs-on: ubuntu-latest
 
