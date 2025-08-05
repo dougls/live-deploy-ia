@@ -47,15 +47,17 @@ jobs:
 
       - name: 6. Install Karpenter
         run: |
-          CLUSTER_ENDPOINT=$(aws eks describe-cluster --name ${{ env.CLUSTER_NAME }} --query "cluster.endpoint" --output text)
+          # 1. Obtenha o endpoint e adicione ao ambiente do workflow
+          echo "CLUSTER_ENDPOINT=$(aws eks describe-cluster --name ${{ env.CLUSTER_NAME }} --query "cluster.endpoint" --output text)" >> $GITHUB_ENV
 
+          # 2. Agora instale o Helm. A variável será substituída pelo GitHub Actions.
           helm upgrade --install karpenter karpenter/karpenter \
-          --namespace karpenter --create-namespace \
-          --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KarpenterNodeRole-${{ env.CLUSTER_NAME }}" \
-          --set settings.aws.clusterName="${{ env.CLUSTER_NAME }}" \
-          --set settings.aws.clusterEndpoint=${CLUSTER_ENDPOINT} \
-          --set settings.aws.defaultInstanceProfile="KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }}" \
-          --wait
+            --namespace karpenter --create-namespace \
+            --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KarpenterNodeRole-${{ env.CLUSTER_NAME }}" \
+            --set settings.aws.clusterName="${{ env.CLUSTER_NAME }}" \
+            --set settings.aws.clusterEndpoint=${{ env.CLUSTER_ENDPOINT }} \
+            --set settings.aws.defaultInstanceProfile="KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }}" \
+            --wait
 
       - name: 8. Install KEDA
         run: |
