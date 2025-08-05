@@ -11,6 +11,7 @@ jobs:
     name: Build, Teste e Geração de Artefatos
     runs-on: ubuntu-latest
     permissions:
+      issues: write
       contents: write
       pull-requests: write
       id-token: write
@@ -23,8 +24,9 @@ jobs:
         uses: Codium-ai/pr-agent@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CONFIG.MODEL: "gemini/gemini-1.5-flash-latest"
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          # GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # CONFIG.MODEL: "gemini/gemini-1.5-flash-latest"
 
       - name: 3. Setup Python
         uses: actions/setup-python@v5
