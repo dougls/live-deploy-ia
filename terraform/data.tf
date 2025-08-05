@@ -1,3 +1,7 @@
+data "aws_iam_user" "principal_user" {
+  user_name = "live-fiap"
+}
+
 data "aws_vpc" "vpc" {
   cidr_block = "172.31.0.0/16"
 }

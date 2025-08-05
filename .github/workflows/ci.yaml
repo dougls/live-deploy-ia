@@ -4,9 +4,7 @@ on:
   pull_request:
 
 env:
-  ECR_REPOSITORY: "ai-flask-app"
   AWS_REGION: "us-east-1"
-  APP_NAME: "app-python"
 
 jobs:
   build-and-test:

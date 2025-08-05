@@ -1,0 +1,63 @@
+name: Install Karpenter & KEDA
+
+on: workflow_dispatch
+
+env:
+  AWS_REGION: "us-east-1"
+  CLUSTER_NAME: "fiap-eks"
+
+jobs:
+  karp-keda:
+    name: Install Karpenter & KEDA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ID }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 2. Update Kube Config
+        run: |
+          aws eks update-kubeconfig \
+          --name ${{ env.CLUSTER_NAME }} \
+          --region ${{ env.AWS_REGION }}
+
+      - name: 3. Create role Karpenter
+        run: |
+          curl -fsSL \
+          https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml > \
+          karpenter.yaml && \
+          aws cloudformation deploy \
+          --stack-name "Karpenter-${{ env.CLUSTER_NAME }}" \
+          --template-file karpenter.yaml \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --parameter-overrides "ClusterName=${{ env.CLUSTER_NAME }}"
+
+      - name: 4. Install Helm
+        uses: azure/setup-helm@v1
+
+      - name: 5. Adding Karpenter
+        run: |
+          helm repo add karpenter https://charts.karpenter.sh/
+          helm repo update
+
+      - name: 6. Install Karpenter
+        run: |
+          helm upgrade --install karpenter karpenter/karpenter \
+          --namespace karpenter --create-namespace \
+          --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KarpenterNodeRole-${{ env.CLUSTER_NAME }}" \
+          --set settings.aws.clusterName=${{ env.CLUSTER_NAME }} \
+          --set settings.aws.defaultInstanceProfile=KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }} \
+          --wait
+      
+      - name: 7. Adding KEDA
+        run: |
+          helm repo add kedacore https://kedacore.github.io/charts
+          helm repo update
+
+      - name: 8. Install KEDA
+        run: |
+          helm install keda kedacore/keda --namespace keda --create-namespace
