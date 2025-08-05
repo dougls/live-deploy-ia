@@ -18,14 +18,12 @@ spec:
     spec:
       containers:
       - name: ai-flask-app
-        # IMPORTANTE: A URL da imagem será substituída pelo pipeline de CD
-        image: __ECR_REGISTRY_URL__/__ECR_REPOSITORY_NAME__:__IMAGE_TAG__
+        image: 377762445607.dkr.ecr.us-east-1.amazonaws.com/app-python:latest
         ports:
         - containerPort: 8080
         env:
         - name: IMAGE_VERSION
-          value: "__IMAGE_TAG__"
-        # Definir os requests de recursos é crucial para o HPA e para o Karpenter tomar decisões.
+          value: "latest"
         resources:
           requests:
             cpu: "100m"
