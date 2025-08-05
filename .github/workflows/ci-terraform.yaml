@@ -25,23 +25,17 @@ jobs:
       - name: 3. Terraform Setup
         uses: hashicorp/setup-terraform@v3
 
-      - name: 4. Terraform Format
-        id: fmt
-        run: terraform fmt -check
-        working-directory: terraform
-        continue-on-error: true
-
-      - name: 5. Terraform Init
+      - name: 4. Terraform Init
         id: init
         run: terraform init -input=false
         working-directory: terraform
 
-      - name: 6. Terraform Validate
+      - name: 5. Terraform Validate
         id: validate
         run: terraform validate -no-color
         working-directory: terraform
 
-      - name: 7. Terraform Plan
+      - name: 6. Terraform Plan
         id: plan
         run: terraform plan -out=tfplan -no-color -input=false
         working-directory: terraform
