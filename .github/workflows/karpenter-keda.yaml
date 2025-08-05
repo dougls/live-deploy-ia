@@ -43,7 +43,7 @@ jobs:
         run: |
           helm repo add karpenter https://charts.karpenter.sh/
           helm repo add kedacore https://kedacore.github.io/charts
-          helm update
+          helm repo update
 
       - name: 6. Install Karpenter
         run: |
