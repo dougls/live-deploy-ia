@@ -2,7 +2,7 @@ name: CD - Deploy no Kubernetes
 
 on:
   workflow_run:
-    workflows: ["CD - Terraform"]
+    workflows: ["Install Karpenter & KEDA"]
     types:
       - completed
     branches:
