@@ -105,4 +105,4 @@ jobs:
       - name: 12. Verificar o status do deploy
         run: |
           echo "Aguardando o deploy ficar pronto..."
-          kubectl rollout status deployment/ai-flask-app -n default --timeout=120s
+          kubectl rollout status deployment/ai-flask-app -n python --timeout=120s
