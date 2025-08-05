@@ -50,8 +50,8 @@ jobs:
           helm upgrade --install karpenter karpenter/karpenter \
           --namespace karpenter --create-namespace \
           --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KarpenterNodeRole-${{ env.CLUSTER_NAME }}" \
-          --set settings.aws.clusterName=${{ env.CLUSTER_NAME }} \
-          --set settings.aws.defaultInstanceProfile=KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }} \
+          --set settings.aws.clusterName="${{ env.CLUSTER_NAME }}" \
+          --set settings.aws.defaultInstanceProfile="KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }}" \
           --wait
 
       - name: 8. Install KEDA
