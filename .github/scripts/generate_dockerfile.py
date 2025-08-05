@@ -5,8 +5,8 @@ import requests
 import time
 
 # --- Configuração ---
-# Use a Gemini Flash API para uma resposta rápida e eficiente.
-API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview-0514:generateContent"
+# ATUALIZADO: Usando a tag 'latest' para garantir que sempre usamos a versão mais recente do modelo Flash.
+API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if not API_KEY:
@@ -75,7 +75,6 @@ def generate_dockerfile_with_ai(context):
                 content = data['candidates'][0]['content']['parts'][0]['text']
                 return content.strip()
             else:
-                # Se a resposta não tiver o formato esperado, mas foi bem-sucedida (200 OK)
                 print("Resposta da API recebida, mas sem conteúdo válido.")
                 print("Resposta completa:", json.dumps(data, indent=2))
                 return None
