@@ -2,10 +2,7 @@ name: CD - Deploy no Kubernetes
 
 on:
   workflow_run:
-    workflows: [
-      "CI - Build, Teste e Geração com IA",
-      "CD - Terraform"
-      ]
+    workflows: ["CD - Terraform"]
     types:
       - completed
     branches:
@@ -30,21 +27,38 @@ jobs:
       - name: 1. Checkout do código
         uses: actions/checkout@v4
 
-      - name: 2. Download dos Artefatos de Deploy
-        uses: actions/download-artifact@v4
+      - name: 2. Setup Python
+        uses: actions/setup-python@v5
         with:
-          name: deploy-artifacts
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
+          python-version: '3.10'
 
-      - name: 3. Configure AWS Credentials
+      - name: 3. Instalar dependências do script de IA
+        run: pip install requests
+
+      - name: 5. Baixar e Executar Script Gerador de Dockerfile
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "Baixando script de IA..."
+          curl -sSL ${{ secrets.GEMINI_GERADOR_DOCKERFILE_URL }} -o generate_dockerfile.py
+          echo "Executando script..."
+          python generate_dockerfile.py
+
+      - name: 4. Commitar o Dockerfile gerado (se estiver na branch main)
+        if: github.ref == 'refs/heads/main'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: ✨ Gera e commita Dockerfile via IA"
+          file_pattern: Dockerfile
+
+      - name: 5. Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ID }}
           aws-region: ${{ env.AWS_REGION }}
       
-      - name: Login ECR
+      - name: 6. Login ECR
         run: |
           aws ecr get-login-password \
           --region ${{ env.AWS_REGION }} | \
@@ -52,19 +66,19 @@ jobs:
           --password-stdin \
           ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
-      - name: BuildAndPush Dockerfile
+      - name: 7. BuildAndPush Dockerfile
         run: |
           docker build -t app-python . && \
           docker tag app-python:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/app-python:latest && \
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/app-python:latest
 
-      - name: 4. Update Kube Config
+      - name: 8. Update Kube Config
         run: |
           aws eks update-kubeconfig \
           --name ${{ env.CLUSTER_NAME }} \
           --region ${{ env.AWS_REGION }}
 
-      - name: 5. Aplicar Configurações de Escalabilidade (Karpenter e KEDA)
+      - name: 9. Aplicar Configurações de Escalabilidade (Karpenter e KEDA)
         run: |
           echo "--- Aplicando configurações do Karpenter e KEDA ---"
           kubectl apply -f k8s/ns.yaml && \
@@ -72,7 +86,7 @@ jobs:
           kubectl apply -f k8s-addons/keda/
           echo "---------------------------------------------------"
 
-      - name: 6. Realizar o Deploy da Aplicação
+      - name: 10. Realizar o Deploy da Aplicação
         run: |
           echo "--- Aplicando manifestos da aplicação ---"
           cat k8s/deployment.yaml
@@ -82,7 +96,7 @@ jobs:
           kubectl apply -f k8s/service.yaml
           echo "🚀 Deploy da aplicação iniciado!"
 
-      - name: 7. Verificar o status do deploy
+      - name: 11. Verificar o status do deploy
         run: |
           echo "Aguardando o deploy ficar pronto..."
           kubectl rollout status deployment/ai-flask-app -n default --timeout=120s
