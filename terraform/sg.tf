@@ -1,7 +1,7 @@
 resource "aws_security_group" "sg" {
   name        = "SG-${var.projectName}"
   description = "Usado no EKS"
-  vpc_id      = aws_vpc.vpc_fiap.id
+  vpc_id      = aws_vpc.vpc.id
 
   # Inbound
   ingress {
