@@ -54,6 +54,7 @@ def generate_dockerfile_with_ai(context):
     4.  **Porta:** Exponha a porta 8080, que é a porta que a aplicação Flask está usando.
     5.  **Otimização de cache:** Copie 'requirements.txt' e instale as dependências antes de copiar o resto do código.
     6.  **Comentários:** Adicione comentários explicando cada passo importante.
+    7.  **Comando de Execução:** Use `CMD ["python", "app.py"]` para iniciar a aplicação. Não use `RUN` para este passo.
 
     Responda APENAS com o código do Dockerfile, sem nenhuma explicação extra ou formatação de markdown como ```dockerfile.
     """
