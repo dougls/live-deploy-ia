@@ -27,6 +27,14 @@ jobs:
       - name: 1. Checkout do código
         uses: actions/checkout@v4
 
+      - name: 2. AI Code Review
+        if: github.event_name == 'pull_request'
+        uses: Codium-ai/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CONFIG.MODEL: "gemini/gemini-1.5-flash-latest"
+
       - name: 2. Setup Python
         uses: actions/setup-python@v5
         with:
