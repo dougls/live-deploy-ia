@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: ai-flask-app
-        image: 377762445607.dkr.ecr.us-east-1.amazonaws.com/app-python:latest
+        image: 490498244836.dkr.ecr.us-east-1.amazonaws.com/app-python:latest
         ports:
         - containerPort: 8080
         env:
