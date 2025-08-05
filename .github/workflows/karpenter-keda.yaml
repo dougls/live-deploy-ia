@@ -45,12 +45,18 @@ jobs:
           helm repo add kedacore https://kedacore.github.io/charts
           helm repo update
 
-      - name: 6. Install Karpenter
+      - name: 6a. Get EKS Cluster Endpoint
+        id: get_endpoint # Adiciona um ID ao step para referência
         run: |
-          # 1. Obtenha o endpoint e adicione ao ambiente do workflow
           echo "CLUSTER_ENDPOINT=$(aws eks describe-cluster --name ${{ env.CLUSTER_NAME }} --query "cluster.endpoint" --output text)" >> $GITHUB_ENV
 
-          # 2. Agora instale o Helm. A variável será substituída pelo GitHub Actions.
+    # Step 6b: Instalar o Karpenter usando o endpoint do step anterior
+      - name: 6b. Install Karpenter
+        run: |
+          # Verifique se a variável foi pega corretamente (bom para debug)
+          echo "Usando o endpoint: ${{ env.CLUSTER_ENDPOINT }}"
+          
+          # O valor de ${{ env.CLUSTER_ENDPOINT }} agora estará preenchido corretamente
           helm upgrade --install karpenter karpenter/karpenter \
             --namespace karpenter --create-namespace \
             --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KarpenterNodeRole-${{ env.CLUSTER_NAME }}" \
