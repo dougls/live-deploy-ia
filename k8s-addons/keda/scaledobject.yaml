@@ -1,0 +1,27 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ai-flask-app-scaler
+  namespace: python
+spec:
+  scaleTargetRef:
+    name: ai-flask-app
+
+  # Definimos os limites, mas o Cron usará um número fixo de réplicas.
+  minReplicaCount: 0   # Escala para ZERO fora da janela de tempo.
+  maxReplicaCount: 5   # Um limite de segurança.
+
+  triggers:
+  - type: cron
+    metadata:
+      # Fuso horário para as expressões Cron. Importante para agendamentos precisos.
+      timezone: "America/Sao_Paulo" 
+      
+      # Escalar para 4 réplicas a cada 5 minutos (nos minutos 0, 5, 10, 15...).
+      start: "*/5 * * * *"
+      
+      # Escalar de volta para 0 um minuto depois (nos minutos 1, 6, 11, 16...).
+      end: "1-59/5 * * * *"
+      
+      # O número de réplicas desejado durante o período ativo.
+      desiredReplicas: "4"

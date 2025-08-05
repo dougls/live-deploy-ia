@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-flask-app
+  labels:
+    app: ai-flask-app
+  namespace: python
+spec:
+  # A contagem de réplicas foi removida.
+  # O KEDA agora tem controle total sobre o escalonamento.
+  selector:
+    matchLabels:
+      app: ai-flask-app
+  template:
+    metadata:
+      labels:
+        app: ai-flask-app
+    spec:
+      containers:
+      - name: ai-flask-app
+        # IMPORTANTE: A URL da imagem será substituída pelo pipeline de CD
+        image: __ECR_REGISTRY_URL__/__ECR_REPOSITORY_NAME__:__IMAGE_TAG__
+        ports:
+        - containerPort: 8080
+        env:
+        - name: IMAGE_VERSION
+          value: "__IMAGE_TAG__"
+        # Definir os requests de recursos é crucial para o HPA e para o Karpenter tomar decisões.
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10

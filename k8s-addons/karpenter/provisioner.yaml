@@ -1,0 +1,41 @@
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: default
+spec:
+  # Requisitos para os nós que o Karpenter irá criar.
+  requirements:
+    - key: karpenter.sh/pkg/arch
+      operator: In
+      values: ["amd64"] # Arquitetura do processador
+    - key: karpenter.k8s.aws/instance-category
+      operator: In
+      values: ["c", "m", "r"] # Famílias de instâncias permitidas (C, M, R)
+    - key: karpenter.k8s.aws/instance-generation
+      operator: Gt
+      values: ["2"] # Apenas instâncias de geração 2 ou superior
+
+  # Limita o total de recursos que este provisioner pode alocar no cluster.
+  limits:
+    resources:
+      cpu: "100" # Limite de 100 vCPUs
+      memory: 100Gi # Limite de 100 GiB de memória
+
+  # Provedor de nuvem e configurações específicas
+  providerRef:
+    name: default
+
+  # Tempo de vida dos nós em segundos. Nós vazios serão removidos após este tempo.
+  ttlSecondsAfterEmpty: 30
+---
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: default
+spec:
+  # Configurações específicas da AWS para os nós criados.
+  # Aqui você pode definir subnets, security groups, etc.
+  subnetSelector:
+    karpenter.sh/discovery: fiap-eks # Usa as subnets do seu cluster EKS
+  securityGroupSelector:
+    karpenter.sh/discovery: fiap-eks # Usa os security groups do seu cluster EKS

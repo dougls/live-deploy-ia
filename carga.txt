@@ -1,0 +1,6 @@
+# Primeiro, inicie o port-forward para acessar o serviço localmente
+kubectl port-forward svc/ai-flask-app-service 8080:80
+
+# Em outro terminal, use um loop para gerar carga na aplicação
+# Isto vai aumentar o uso de CPU dos pods
+while true; do curl http://localhost:8080; done
