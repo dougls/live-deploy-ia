@@ -10,10 +10,6 @@ variable "ecr_name_app" {
   default = "app-python"
 }
 
-variable "labRole" {
-  default = "arn:aws:iam::377762445607:role/LabRole"
-}
-
 variable "accessConfig" {
   default = "API_AND_CONFIG_MAP"
 }
@@ -24,10 +20,6 @@ variable "nodeGroup" {
 
 variable "instanceType" {
   default = "t3.medium"
-}
-
-variable "principalArn" {
-  default = "arn:aws:iam::377762445607:role/voclabs"
 }
 
 variable "policyArn" {
