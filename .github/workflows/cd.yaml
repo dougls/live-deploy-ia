@@ -1,0 +1,86 @@
+name: CD - Deploy no Kubernetes
+
+on:
+  workflow_run:
+    workflows: ["CD - Terraform"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy no Ambiente de Produção
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: "us-east-1"
+      CLUSTER_NAME: "fiap-eks"
+
+    steps:
+      - name: 1. Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 2. Download dos Artefatos de Deploy
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: 3. Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ID }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Login ECR
+        run: |
+          aws ecr get-login-password \
+          --region ${{ env.AWS_REGION }} | \
+          docker login --username AWS \
+          --password-stdin \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+      - name: BuildAndPush Dockerfile
+        run: |
+          docker build -t app-python . && \
+          docker tag app-python:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/app-python:latest && \
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/app-python:latest
+
+      - name: 4. Update Kube Config
+        run: |
+          aws eks update-kubeconfig \
+          --name ${{ env.CLUSTER_NAME }} \
+          --region ${{ env.AWS_REGION }}
+
+      - name: 5. Aplicar Configurações de Escalabilidade (Karpenter e KEDA)
+        run: |
+          echo "--- Aplicando configurações do Karpenter e KEDA ---"
+          kubectl apply -f k8s/ns.yaml && \
+          kubectl apply -f k8s-addons/karpenter/
+          kubectl apply -f k8s-addons/keda/
+          echo "---------------------------------------------------"
+
+      - name: 6. Realizar o Deploy da Aplicação
+        run: |
+          echo "--- Aplicando manifestos da aplicação ---"
+          cat k8s/deployment.yaml
+          cat k8s/service.yaml
+          echo "-----------------------------------------"
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          echo "🚀 Deploy da aplicação iniciado!"
+
+      - name: 7. Verificar o status do deploy
+        run: |
+          echo "Aguardando o deploy ficar pronto..."
+          kubectl rollout status deployment/ai-flask-app -n default --timeout=120s

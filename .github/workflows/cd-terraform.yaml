@@ -1,0 +1,51 @@
+name: CD - Terraform
+
+on:
+  push:
+    branches:
+     - main
+  workflow_dispatch:
+
+env:
+  REGION_DEFAULT: us-east-1
+
+jobs:
+  create_infra:
+    name: terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout
+        uses: actions/checkout@v2
+
+      - name: 2. Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ID }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 3. Terraform Setup
+        uses: hashicorp/setup-terraform@v3
+
+      - name: 4. Terraform Init
+        id: init
+        run: terraform init -input=false
+        working-directory: terraform
+
+      - name: 5. Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: terraform
+
+      - name: 6. Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan -no-color -input=false
+        working-directory: terraform
+        continue-on-error: true
+
+      - name: 7. Terraform Apply
+        id: apply
+        run: terraform apply -input=false -auto-approve
+        working-directory: terraform
