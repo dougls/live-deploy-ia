@@ -9,7 +9,7 @@ def home():
 
 @app.route('/health')
 def health_check():
-    return jsonify(status="ok", message="Aplicação está saudável, está retornando OK!"), 200
+    return jsonify(status="ok", message="Aplicação está saudável."), 200
 
 @app.route('/version')
 def app_version():
