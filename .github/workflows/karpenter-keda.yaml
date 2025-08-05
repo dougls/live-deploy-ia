@@ -1,6 +1,13 @@
 name: Install Karpenter & KEDA
 
-on: workflow_dispatch
+on:
+  workflow_run:
+    workflows: ["CD - Terraform"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
 
 env:
   AWS_REGION: "us-east-1"
