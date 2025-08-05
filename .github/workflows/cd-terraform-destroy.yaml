@@ -26,7 +26,7 @@ jobs:
 
       - name: 4. Terraform Init
         id: init
-        run: terraform init -input=false
+        run: terraform init -input=false -upgrade -reconfigure
         working-directory: terraform
 
       - name: 5. Terraform Apply

@@ -37,27 +37,35 @@ jobs:
           --parameter-overrides "ClusterName=${{ env.CLUSTER_NAME }}"
 
       - name: 4. Install Helm
-        uses: azure/setup-helm@v1
+        uses: azure/setup-helm@v4
 
-      - name: 5. Adding Karpenter
+      - name: 5. Add Helm Repositories
         run: |
           helm repo add karpenter https://charts.karpenter.sh/
-          helm repo update
-
-      - name: 6. Install Karpenter
-        run: |
-          helm upgrade --install karpenter karpenter/karpenter \
-          --namespace karpenter --create-namespace \
-          --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KarpenterNodeRole-${{ env.CLUSTER_NAME }}" \
-          --set settings.aws.clusterName=${{ env.CLUSTER_NAME }} \
-          --set settings.aws.defaultInstanceProfile=KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }} \
-          --wait
-      
-      - name: 7. Adding KEDA
-        run: |
           helm repo add kedacore https://kedacore.github.io/charts
           helm repo update
 
+      - name: 6a. Get EKS Cluster Endpoint
+        id: get_endpoint # Adiciona um ID ao step para referência
+        run: |
+          echo "CLUSTER_ENDPOINT=$(aws eks describe-cluster --name ${{ env.CLUSTER_NAME }} --query "cluster.endpoint" --output text)" >> $GITHUB_ENV
+
+    # Step 6b: Instalar o Karpenter usando o endpoint do step anterior
+      - name: 6b. Install Karpenter
+        run: |
+          # Verifique se a variável foi pega corretamente (bom para debug)
+          echo "Usando o endpoint: ${{ env.CLUSTER_ENDPOINT }}"
+          
+          # O valor de ${{ env.CLUSTER_ENDPOINT }} agora estará preenchido corretamente
+          helm upgrade --install karpenter karpenter/karpenter \
+            --namespace karpenter --create-namespace \
+            --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KarpenterNodeRole-${{ env.CLUSTER_NAME }}" \
+            --set clusterName="${{ env.CLUSTER_NAME }}" \
+            --set clusterEndpoint="${{ env.CLUSTER_ENDPOINT }}" \
+            --set defaultInstanceProfile="KarpenterNodeInstanceProfile-${{ env.CLUSTER_NAME }}" \
+            --wait
+
       - name: 8. Install KEDA
         run: |
-          helm install keda kedacore/keda --namespace keda --create-namespace
+          helm upgrade --install keda kedacore/keda \
+          --namespace keda --create-namespace
